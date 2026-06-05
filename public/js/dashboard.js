@@ -216,6 +216,10 @@ function setModalLoading(isLoading, text = "Processando...") {
 }
 
 function resetModalState() {
+    customModal.querySelectorAll(".route-segments-actions").forEach((element) => {
+        element.remove();
+    });
+
     // texto padrão
     modalTitle.textContent = "";
     modalMessage.textContent = "";
@@ -249,7 +253,6 @@ function startRouteInGoogleMaps(routeData) {
 
     let orderedPoints = [];
 
-    // Novo formato
     if (Array.isArray(routeData.points) && routeData.points.length > 0) {
         orderedPoints = routeData.points
             .filter(p => p && typeof p.lat === "number" && typeof p.lng === "number")
@@ -259,7 +262,6 @@ function startRouteInGoogleMaps(routeData) {
             }));
     }
 
-    // Compatibilidade com rota antiga (lat/lng únicos)
     else if (
         typeof routeData.lat === "number" &&
         typeof routeData.lng === "number"
@@ -287,15 +289,22 @@ function startRouteInGoogleMaps(routeData) {
     const intermediatePoints = orderedPoints.slice(1, -1);
 
     if (intermediatePoints.length > maxWaypoints) {
-        showModal(
-            "Muitos pontos para iniciar",
-            `O Google Maps aceita até ${maxWaypoints} pontos intermediários neste dispositivo. Divida a rota em trechos menores.`,
-            "info"
+        showRouteSegmentsModal(
+            orderedPoints,
+            maxWaypoints,
+            routeData.name || "Rota"
         );
         return;
     }
 
-    const formatPoint = (point) => `${point.lat},${point.lng}`;
+    openGoogleMapsUrl(buildGoogleMapsDirectionsUrl(orderedPoints));
+}
+
+function buildGoogleMapsDirectionsUrl(points) {
+    const orderedPoints = points.filter(
+        (point) => Number.isFinite(point.lat) && Number.isFinite(point.lng)
+    );
+    const intermediatePoints = orderedPoints.slice(1, -1);
     const params = new URLSearchParams({
         api: "1",
         origin: formatPoint(orderedPoints[0]),
@@ -308,12 +317,85 @@ function startRouteInGoogleMaps(routeData) {
         params.set("waypoints", intermediatePoints.map(formatPoint).join("|"));
     }
 
-    const googleMapsUrl = `https://www.google.com/maps/dir/?${params.toString()}`;
-    const mapsWindow = window.open(googleMapsUrl, "_blank");
+    return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+function formatPoint(point) {
+    return `${point.lat},${point.lng}`;
+}
+
+function openGoogleMapsUrl(url) {
+    const mapsWindow = window.open(url, "_blank");
 
     if (mapsWindow) {
         mapsWindow.opener = null;
     }
+}
+
+function createGoogleMapsSegments(points, maxWaypoints) {
+    const maxPointsPerSegment = maxWaypoints + 2;
+    const segments = [];
+    let startIndex = 0;
+
+    while (startIndex < points.length - 1) {
+        const endIndex = Math.min(
+            startIndex + maxPointsPerSegment - 1,
+            points.length - 1
+        );
+        const segmentPoints = points.slice(startIndex, endIndex + 1);
+
+        if (segmentPoints.length >= 2) {
+            segments.push({
+                startIndex,
+                endIndex,
+                points: segmentPoints,
+                url: buildGoogleMapsDirectionsUrl(segmentPoints)
+            });
+        }
+
+        if (endIndex >= points.length - 1) break;
+        startIndex = endIndex;
+    }
+
+    return segments;
+}
+
+function showRouteSegmentsModal(points, maxWaypoints, routeName) {
+    const segments = createGoogleMapsSegments(points, maxWaypoints);
+    if (segments.length === 0) return;
+
+    resetModalState();
+
+    modalTitle.textContent = "Abrir rota em trechos";
+    modalMessage.textContent =
+        `${routeName} tem muitos pontos para abrir de uma vez no Google Maps. ` +
+        "Abra os trechos em ordem.";
+    modalIcon.textContent = "i";
+    modalIcon.style.background = "rgba(59,130,246,0.14)";
+    modalIcon.style.color = "#3b82f6";
+    modalCloseBtn.textContent = "Fechar";
+    modalCloseBtn.onclick = closeModal;
+
+    const actions = document.createElement("div");
+    actions.className = "route-segments-actions";
+
+    segments.forEach((segment, index) => {
+        const link = document.createElement("a");
+        link.className = "route-segment-link";
+        link.href = segment.url;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent =
+            `Abrir trecho ${index + 1}: ponto ${segment.startIndex + 1} ao ${segment.endIndex + 1}`;
+        actions.appendChild(link);
+    });
+
+    modalMessage.insertAdjacentElement("afterend", actions);
+    customModal.classList.remove("hidden");
+
+    requestAnimationFrame(() => {
+        customModal.style.opacity = "1";
+    });
 }
 
 function showModal(title, message, type = "success", options = {}) {

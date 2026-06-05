@@ -1,4 +1,4 @@
-const CACHE_NAME = "routesaver-v15";
+const CACHE_NAME = "routesaver-v16";
 
 const urlsToCache = [
   "./",

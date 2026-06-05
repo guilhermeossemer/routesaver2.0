@@ -77,7 +77,7 @@
     <h1>Limpando cache</h1>
     <p id="status">Removendo versoes antigas do RouteSaver...</p>
     <button id="retry-btn" type="button" hidden>Limpar novamente</button>
-    <a id="open-btn" href="./index.html?v15" hidden>Abrir RouteSaver</a>
+    <a id="open-btn" href="./index.html?v16" hidden>Abrir RouteSaver</a>
     <code id="details"></code>
   </main>
 
@@ -116,7 +116,7 @@
         openBtn.hidden = false;
 
         window.setTimeout(() => {
-          window.location.href = "./index.html?v15";
+          window.location.href = "./index.html?v16";
         }, 1800);
       } catch (error) {
         statusEl.textContent = "Nao foi possivel limpar automaticamente.";
