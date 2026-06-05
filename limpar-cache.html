@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Limpar cache | RouteSaver</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: #0b1220;
+      color: #f8fafc;
+    }
+
+    main {
+      width: 100%;
+      max-width: 420px;
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      background: #111827;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+
+    p {
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    a,
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      margin-top: 12px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 14px;
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    code {
+      display: block;
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #93c5fd;
+      text-align: left;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Limpando cache</h1>
+    <p id="status">Removendo versoes antigas do RouteSaver...</p>
+    <button id="retry-btn" type="button" hidden>Limpar novamente</button>
+    <a id="open-btn" href="./index.html?v15" hidden>Abrir RouteSaver</a>
+    <code id="details"></code>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const detailsEl = document.getElementById("details");
+    const retryBtn = document.getElementById("retry-btn");
+    const openBtn = document.getElementById("open-btn");
+
+    retryBtn.addEventListener("click", () => {
+      retryBtn.hidden = true;
+      openBtn.hidden = true;
+      clearRouteSaverCache();
+    });
+
+    clearRouteSaverCache();
+
+    async function clearRouteSaverCache() {
+      const log = [];
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+          log.push(`Service Workers removidos: ${registrations.length}`);
+        }
+
+        if ("caches" in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map((name) => caches.delete(name)));
+          log.push(`Caches removidos: ${names.length}`);
+        }
+
+        statusEl.textContent = "Cache limpo. Abra o RouteSaver novamente.";
+        detailsEl.textContent = log.join("\n") || "Nada antigo foi encontrado.";
+        openBtn.hidden = false;
+
+        window.setTimeout(() => {
+          window.location.href = "./index.html?v15";
+        }, 1800);
+      } catch (error) {
+        statusEl.textContent = "Nao foi possivel limpar automaticamente.";
+        detailsEl.textContent = error.message || String(error);
+        retryBtn.hidden = false;
+      }
+    }
+  </script>
+</body>
+
+</html>

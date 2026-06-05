@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | RouteSaver Firebase</title>
+  <link rel="stylesheet" href="./public/css/auth.css" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./public/img/favicon-64.png" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RouteSaver" />
+</head>
+
+<body class="auth-checking">
+  <div id="auth-app" class="auth-container">
+    <div class="auth-card">
+      <h1>Entrar</h1>
+      <p>Acesse sua conta para visualizar suas rotas.</p>
+
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="login-email">E-mail</label>
+          <input type="email" id="login-email" placeholder="Digite seu e-mail" required />
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" placeholder="Digite sua senha" required />
+        </div>
+
+        <button type="submit" class="btn-submit">Entrar</button>
+      </form>
+
+      <div class="auth-links">
+        <a href="./public/pages/register.html">Criar conta</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="file-protocol-warning" class="auth-container" hidden>
+    <div class="auth-card protocol-warning">
+      <h1>Abra pelo inicializador</h1>
+      <p>O navegador bloqueia o RouteSaver quando o arquivo HTML é aberto diretamente.</p>
+      <code>ABRIR-ROUTESAVER.cmd</code>
+      <p>Dê dois cliques nesse arquivo, que está na mesma pasta deste HTML.</p>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const appVersion = "v15";
+      const isWebAddress = ["http:", "https:"].includes(window.location.protocol);
+
+      if (!isWebAddress) {
+        document.body.classList.remove("auth-checking");
+        document.getElementById("auth-app").hidden = true;
+        document.getElementById("file-protocol-warning").hidden = false;
+        return;
+      }
+
+      const manifest = document.createElement("link");
+      manifest.rel = "manifest";
+      manifest.href = `./manifest.webmanifest?${appVersion}`;
+      document.head.appendChild(manifest);
+
+      const authScript = document.createElement("script");
+      authScript.type = "module";
+      authScript.src = `./public/js/auth.js?${appVersion}`;
+      document.body.appendChild(authScript);
+
+      if ("serviceWorker" in navigator && window.isSecureContext) {
+        navigator.serviceWorker.register(`./sw.js?${appVersion}`, {
+          scope: "./"
+        }).then((registration) => {
+          return registration.update();
+        }).catch((error) => {
+          console.error("Erro ao registrar Service Worker:", error);
+        });
+      }
+    })();
+  </script>
+</body>
+
+</html>
